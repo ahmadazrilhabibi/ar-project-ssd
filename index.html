@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fcor/arjs-gestures/dist/gestures.js"></script>
+
+  <!-- CUSTOM ROTATION 360 -->
+  <script>
+    AFRAME.registerComponent('full-rotate', {
+      init: function () {
+        this.dragging = false;
+        this.prevX = 0;
+        this.prevY = 0;
+
+        const el = this.el;
+        const scene = el.sceneEl;
+
+        scene.addEventListener('renderstart', () => {
+          const canvas = scene.canvas;
+
+          canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+              this.dragging = true;
+              this.prevX = e.touches[0].clientX;
+              this.prevY = e.touches[0].clientY;
+            }
+          });
+
+          canvas.addEventListener('touchend', () => {
+            this.dragging = false;
+          });
+
+          canvas.addEventListener('touchmove', (e) => {
+            if (!this.dragging || e.touches.length !== 1) return;
+
+            let dx = e.touches[0].clientX - this.prevX;
+            let dy = e.touches[0].clientY - this.prevY;
+
+            this.prevX = e.touches[0].clientX;
+            this.prevY = e.touches[0].clientY;
+
+            let rot = el.getAttribute('rotation');
+
+            // FULL ROTATE 360 (tanpa batas)
+            rot.y += dx * 0.7;   // kiri-kanan
+            rot.x += dy * 0.7;   // atas-bawah
+
+            el.setAttribute('rotation', rot);
+          });
+        });
+      }
+    });
+  </script>
+</head>
+
+<body style="margin:0; overflow:hidden;">
+
+  <!-- LOADER -->
+  <div id="loading-screen" style="
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:black;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+    text-align:center;
+  ">
+    Mempersiapkan Modul AR...<br>Mohon tunggu sebentar.
+  </div>
+
+  <a-scene
+    embedded
+    arjs="sourceType: webcam;"
+    renderer="logarithmicDepthBuffer: true;"
+    vr-mode-ui="enabled: false"
+    gesture-detector>
+
+    <a-assets>
+      <a-asset-item id="model-router" src="model.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- MARKER A -->
+    <a-marker type="pattern" url="marker.patt">
+      <a-entity
+	gltf-model="model.glb"
+        scale="0.3 0.3 0.3"
+        position="0 0 0"
+        gesture-handler
+        full-rotate>
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- FIX LOADER -->
+  <script>
+    setTimeout(() => {
+      document.getElementById("loading-screen").style.display = "none";
+    }, 3000);
+
+    document.querySelector("a-scene").addEventListener("loaded", () => {
+      document.getElementById("loading-screen").style.display = "none";
+    });
+  </script>
+
+</body>
+</html>
